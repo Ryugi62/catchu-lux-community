@@ -11,17 +11,22 @@ import {
   View,
 } from 'react-native';
 import { BRANDS, CATEGORIES } from '../../constants/brands';
-import { useAuth } from '../../src/hooks/useAuth';
-import { usePostsFeed } from '../../src/hooks/usePostsFeed';
+import { useAuth } from '../../src/modules/auth';
+import { usePostsFeed } from '../../src/modules/posts';
 import { TagChip } from '../../src/components/ui/TagChip';
+import { colors, radii, shadows, spacing, typography } from '../../src/theme';
 
 const FeedScreen = () => {
   const router = useRouter();
-  const { signOut, user } = useAuth();
+  const { user } = useAuth();
   const {
     posts,
     isLoading,
     errorMessage,
+    loadMore,
+    hasMore,
+    isFetchingMore,
+    refresh,
     brandFilter,
     setBrandFilter,
     categoryFilter,
@@ -31,6 +36,29 @@ const FeedScreen = () => {
   } = usePostsFeed();
 
   const brandOptions = useMemo(() => BRANDS.slice().sort(), []);
+  const profileInitial = (user?.displayName || user?.email || 'C').charAt(0).toUpperCase();
+  const isRefreshing = isLoading && posts.length > 0;
+
+  const renderFooter = () => {
+    if (!posts.length) {
+      return null;
+    }
+    if (isFetchingMore) {
+      return (
+        <View style={styles.listFooter}>
+          <ActivityIndicator color={colors.textPrimary} />
+        </View>
+      );
+    }
+    if (!hasMore) {
+      return (
+        <View style={styles.listFooter}>
+          <Text style={styles.footerText}>모든 소식을 확인했어요.</Text>
+        </View>
+      );
+    }
+    return null;
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -39,8 +67,14 @@ const FeedScreen = () => {
           <Text style={styles.logo}>Catchu Luxury</Text>
           <Text style={styles.subtitle}>프리미엄 아이템 인사이트 커뮤니티</Text>
         </View>
-        <Pressable onPress={signOut}>
-          <Text style={styles.logout}>로그아웃</Text>
+        <Pressable
+          onPress={() => router.push('/(app)/account')}
+          style={styles.profileButton}
+        >
+          <View style={styles.profileAvatar}>
+            <Text style={styles.profileInitial}>{profileInitial}</Text>
+          </View>
+          <Text style={styles.profileLabel}>{user?.displayName ?? '계정 설정'}</Text>
         </Pressable>
       </View>
 
@@ -78,7 +112,7 @@ const FeedScreen = () => {
 
       {isLoading ? (
         <View style={styles.loader}>
-          <ActivityIndicator size="large" color="#1f1b16" />
+          <ActivityIndicator size="large" color={colors.textPrimary} />
         </View>
       ) : errorMessage ? (
         <View style={styles.errorState}>
@@ -90,6 +124,10 @@ const FeedScreen = () => {
           data={posts}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
+          refreshing={isRefreshing}
+          onRefresh={refresh}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.4}
           renderItem={({ item }) => (
             <Pressable
               onPress={() => router.push({ pathname: '/(app)/post/[id]', params: { id: item.id } })}
@@ -119,10 +157,11 @@ const FeedScreen = () => {
             </Pressable>
           )}
           ListEmptyComponent={
-            <View style={{ alignItems: 'center', padding: 48 }}>
-              <Text style={{ color: '#5c524b', fontSize: 16 }}>아직 게시글이 없어요. 첫 글을 작성해보세요!</Text>
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>아직 게시글이 없어요. 첫 글을 작성해보세요!</Text>
             </View>
           }
+          ListFooterComponent={renderFooter}
         />
       )}
 
@@ -139,42 +178,55 @@ const FeedScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f2ece5',
+    backgroundColor: colors.backgroundPrimary,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 8,
+    paddingHorizontal: spacing(5),
+    paddingTop: spacing(3),
+    paddingBottom: spacing(2),
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   logo: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1f1b16',
+    ...typography.heading1,
   },
   subtitle: {
-    color: '#5c524b',
+    ...typography.caption,
     fontSize: 13,
   },
-  logout: {
-    color: '#9a7b50',
+  profileButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing(2),
+  },
+  profileAvatar: {
+    width: spacing(6),
+    height: spacing(6),
+    borderRadius: radii.pill,
+    backgroundColor: colors.textPrimary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileInitial: {
+    color: colors.surfacePrimary,
+    fontWeight: '700',
+  },
+  profileLabel: {
+    color: colors.accent,
     fontWeight: '600',
   },
   filterSection: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: spacing(5),
+    paddingVertical: spacing(3),
     borderTopWidth: StyleSheet.hairlineWidth,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: '#ded4c8',
-    backgroundColor: '#f6efe8',
-    gap: 12,
+    borderColor: colors.borderSubtle,
+    backgroundColor: colors.backgroundSecondary,
+    gap: spacing(3),
   },
   sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#3a3127',
+    ...typography.label,
   },
   chipWrap: {
     flexDirection: 'row',
@@ -184,7 +236,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
   },
   clearText: {
-    color: '#9a7b50',
+    color: colors.accent,
     fontWeight: '600',
   },
   loader: {
@@ -196,32 +248,38 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
-    gap: 12,
+    paddingHorizontal: spacing(8),
+    gap: spacing(3),
   },
   errorTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#3a3127',
+    ...typography.heading2,
     textAlign: 'center',
   },
   errorBody: {
-    fontSize: 14,
-    color: '#5c524b',
+    ...typography.body,
     textAlign: 'center',
-    lineHeight: 20,
   },
   listContent: {
-    padding: 20,
-    paddingBottom: 120,
-    gap: 16,
+    padding: spacing(5),
+    paddingBottom: spacing(30),
+    gap: spacing(4),
+  },
+  listFooter: {
+    paddingVertical: spacing(4),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  footerText: {
+    ...typography.caption,
+    color: colors.textMuted,
   },
   card: {
-    backgroundColor: '#fffaf2',
-    borderRadius: 24,
+    backgroundColor: colors.surfacePrimary,
+    borderRadius: radii.xl,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#eadfce',
+    borderColor: colors.borderStrong,
+    ...shadows.card,
   },
   cardImage: {
     width: '100%',
@@ -230,28 +288,26 @@ const styles = StyleSheet.create({
   cardImageFallback: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#ded4c8',
+    backgroundColor: colors.borderSubtle,
   },
   cardImageFallbackText: {
-    color: '#746a63',
+    color: colors.textMuted,
     fontWeight: '600',
   },
   cardContent: {
-    padding: 16,
-    gap: 6,
+    padding: spacing(4),
+    gap: spacing(1.5),
   },
   cardBrand: {
-    color: '#9a7b50',
+    color: colors.accent,
     fontWeight: '700',
     fontSize: 14,
   },
   cardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1f1b16',
+    ...typography.heading2,
   },
   cardAuthor: {
-    color: '#5c524b',
+    ...typography.caption,
     fontSize: 13,
   },
   tagRow: {
@@ -261,41 +317,45 @@ const styles = StyleSheet.create({
   },
   categoryTag: {
     fontSize: 12,
-    backgroundColor: '#1f1b16',
-    color: '#fdf9f4',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
+    backgroundColor: colors.textPrimary,
+    color: colors.surfacePrimary,
+    paddingHorizontal: spacing(2.5),
+    paddingVertical: spacing(1),
+    borderRadius: radii.pill,
   },
   timestamp: {
-    color: '#746a63',
+    color: colors.textMuted,
     fontSize: 12,
   },
   cardExcerpt: {
-    color: '#3a3127',
-    lineHeight: 20,
+    ...typography.body,
   },
   fab: {
     position: 'absolute',
-    right: 24,
-    bottom: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 999,
-    backgroundColor: '#1f1b16',
+    right: spacing(6),
+    bottom: spacing(6),
+    width: spacing(14),
+    height: spacing(14),
+    borderRadius: radii.pill,
+    backgroundColor: colors.textPrimary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 6,
+    ...shadows.overlay,
   },
   fabText: {
-    color: '#fdf9f4',
+    color: colors.surfacePrimary,
     fontSize: 32,
     lineHeight: 34,
     fontWeight: '400',
+  },
+  emptyState: {
+    alignItems: 'center',
+    padding: spacing(12),
+    gap: spacing(2),
+  },
+  emptyStateText: {
+    ...typography.body,
+    textAlign: 'center',
   },
 });
 
