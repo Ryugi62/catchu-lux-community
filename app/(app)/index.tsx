@@ -1,9 +1,9 @@
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
-import { Image } from 'expo-image';
+import { useEffect, useMemo } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   Pressable,
   SafeAreaView,
   StyleSheet,
@@ -38,6 +38,15 @@ const FeedScreen = () => {
   const brandOptions = useMemo(() => BRANDS.slice().sort(), []);
   const profileInitial = (user?.displayName || user?.email || 'C').charAt(0).toUpperCase();
   const isRefreshing = isLoading && posts.length > 0;
+
+  useEffect(() => {
+    const previewUrls = posts
+      .map((post) => post.imageUrls?.[0])
+      .filter((url): url is string => typeof url === 'string');
+    previewUrls.slice(0, 20).forEach((url) => {
+      Image.prefetch(url).catch(() => undefined);
+    });
+  }, [posts]);
 
   const renderFooter = () => {
     if (!posts.length) {
@@ -137,9 +146,7 @@ const FeedScreen = () => {
                 <Image
                   source={{ uri: item.imageUrls[0] }}
                   style={styles.cardImage}
-                  contentFit="cover"
-                  cachePolicy="memory-disk"
-                  transition={200}
+                  resizeMode="cover"
                 />
               ) : (
                 <View style={[styles.cardImage, styles.cardImageFallback]}> 

@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   ActivityIndicator,
+  Dimensions,
+  Image,
   Pressable,
   FlatList,
   ScrollView,
@@ -14,7 +16,6 @@ import {
   type ViewToken,
   type ViewabilityConfig,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { COMMENT_TAGS } from '../../../constants/brands';
 import { usePost } from '../../../src/modules/posts';
 import { useComments, createComment } from '../../../src/modules/comments';
@@ -24,6 +25,8 @@ import { Button } from '../../../src/components/ui/Button';
 import { colors, radii, shadows, spacing, typography } from '../../../src/theme';
 
 const PostDetailScreen = () => {
+  const windowWidth = Dimensions.get('window').width;
+
   const { id } = useLocalSearchParams<{ id: string }>();
   const postId = Array.isArray(id) ? id[0] : id ?? '';
   const { post, isLoading } = usePost(postId);
@@ -118,13 +121,11 @@ const PostDetailScreen = () => {
             data={post.imageUrls}
             keyExtractor={(item, index) => `${item}-${index}`}
             renderItem={({ item }) => (
-              <Image
-                source={{ uri: item }}
-                style={styles.carouselImage}
-                contentFit="cover"
-                cachePolicy="memory-disk"
-                transition={200}
-              />
+                <Image
+                  source={{ uri: item }}
+                  style={[styles.carouselImage, { width: windowWidth - spacing(5) * 2 }]}
+                  resizeMode="cover"
+                />
             )}
             horizontal
             pagingEnabled
@@ -245,8 +246,8 @@ const styles = StyleSheet.create({
     flexGrow: 0,
   },
   carouselImage: {
-    width: '100%',
     height: 280,
+    borderRadius: radii.xl,
   },
   carouselFallback: {
     flex: 1,
