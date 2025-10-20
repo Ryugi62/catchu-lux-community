@@ -40,15 +40,32 @@ export const createComment = async ({ postId, content, toneTag, authorId, author
   });
 };
 
+interface ListenToCommentsOptions {
+  onError?: (error: unknown) => void;
+}
+
 export const listenToComments = (
   postId: string,
-  onUpdate: (comments: Comment[]) => void
+  onUpdate: (comments: Comment[]) => void,
+  options?: ListenToCommentsOptions
 ) => {
+  const { onError } = options ?? {};
   const commentsRef = collection(firestore, `posts/${postId}/${COMMENTS_COLLECTION}`);
   const commentsQuery = query(commentsRef, orderBy('createdAt', 'asc'));
 
-  return onSnapshot(commentsQuery, (snapshot) => {
-    const comments = snapshot.docs.map((docSnapshot) => toComment(docSnapshot.data(), docSnapshot.id));
-    onUpdate(comments);
-  });
+  return onSnapshot(
+    commentsQuery,
+    {
+      next: (snapshot) => {
+        const comments = snapshot.docs.map((docSnapshot) =>
+          toComment(docSnapshot.data(), docSnapshot.id)
+        );
+        onUpdate(comments);
+      },
+      error: (error) => {
+        console.error(`[listenToComments] snapshot error for post ${postId}`, error);
+        onError?.(error);
+      },
+    }
+  );
 };

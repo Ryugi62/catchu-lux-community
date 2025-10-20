@@ -21,6 +21,7 @@ const FeedScreen = () => {
   const {
     posts,
     isLoading,
+    errorMessage,
     brandFilter,
     setBrandFilter,
     categoryFilter,
@@ -78,6 +79,11 @@ const FeedScreen = () => {
       {isLoading ? (
         <View style={styles.loader}>
           <ActivityIndicator size="large" color="#1f1b16" />
+        </View>
+      ) : errorMessage ? (
+        <View style={styles.errorState}>
+          <Text style={styles.errorTitle}>피드를 불러오는 중 문제가 발생했어요.</Text>
+          <Text style={styles.errorBody}>{errorMessage}</Text>
         </View>
       ) : (
         <FlatList
@@ -185,6 +191,25 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  errorState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+    gap: 12,
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#3a3127',
+    textAlign: 'center',
+  },
+  errorBody: {
+    fontSize: 14,
+    color: '#5c524b',
+    textAlign: 'center',
+    lineHeight: 20,
   },
   listContent: {
     padding: 20,

@@ -10,7 +10,7 @@ import {
   onAuthStateChanged,
   type User,
 } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, initializeFirestore, type Firestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import Constants from "expo-constants";
 
@@ -48,7 +48,15 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 const auth: Auth = getAuth(app);
 
-const firestore = getFirestore(app);
+let firestore: Firestore;
+try {
+  firestore = initializeFirestore(app, {
+    experimentalForceLongPolling: true,
+    useFetchStreams: false,
+  });
+} catch (error) {
+  firestore = getFirestore(app);
+}
 const storage = getStorage(app);
 
 export {

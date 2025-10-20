@@ -22,7 +22,7 @@ const PostDetailScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const postId = Array.isArray(id) ? id[0] : id ?? '';
   const { post, isLoading } = usePost(postId);
-  const { comments, isLoading: commentsLoading } = useComments(postId);
+  const { comments, isLoading: commentsLoading, errorMessage: commentsError } = useComments(postId);
   const { user } = useAuth();
   const [commentText, setCommentText] = useState('');
   const [toneTag, setToneTag] = useState<string>(COMMENT_TAGS[0]);
@@ -100,6 +100,11 @@ const PostDetailScreen = () => {
         <Text style={styles.commentTitle}>커뮤니티 인사이트</Text>
         {commentsLoading ? (
           <ActivityIndicator color="#1f1b16" />
+        ) : commentsError ? (
+          <View style={styles.commentError}>
+            <Text style={styles.commentErrorTitle}>댓글을 불러오지 못했습니다.</Text>
+            <Text style={styles.commentErrorBody}>{commentsError}</Text>
+          </View>
         ) : (
           <View style={{ gap: 12 }}>
             {comments.length === 0 ? (
@@ -248,6 +253,22 @@ const styles = StyleSheet.create({
     padding: 16,
     minHeight: 120,
     color: '#1f1b16',
+  },
+  commentError: {
+    backgroundColor: '#fdf1f0',
+    borderRadius: 16,
+    padding: 16,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#f5c5c5',
+  },
+  commentErrorTitle: {
+    fontWeight: '700',
+    color: '#c05d5d',
+  },
+  commentErrorBody: {
+    color: '#5c524b',
+    lineHeight: 20,
   },
 });
 
