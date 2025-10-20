@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 import { Link } from 'expo-router';
 import { Screen } from '../../src/components/ui/Screen';
 import { TextField } from '../../src/components/ui/TextField';
 import { Button } from '../../src/components/ui/Button';
 import { TagChip } from '../../src/components/ui/TagChip';
 import { BRANDS } from '../../constants/brands';
-import { useAuth } from '../../src/hooks/useAuth';
+import { useAuth } from '../../src/modules/auth';
+import { colors, spacing, typography } from '../../src/theme';
 
 const SignUpScreen = () => {
   const { signUp } = useAuth();
@@ -51,15 +52,15 @@ const SignUpScreen = () => {
 
   return (
     <Screen>
-      <View style={{ gap: 32 }}>
-        <View style={{ gap: 12 }}>
-          <Text style={{ fontSize: 28, fontWeight: '700', color: '#1f1b16' }}>럭셔리 큐레이션 시작</Text>
-          <Text style={{ color: '#5c524b', fontSize: 15 }}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>럭셔리 큐레이션 시작</Text>
+          <Text style={styles.subtitle}>
             선호 브랜드를 선택하고 나만의 피드를 받아보세요.
           </Text>
         </View>
 
-        <View style={{ gap: 20 }}>
+        <View style={styles.form}>
           <TextField label="이름" value={displayName} onChangeText={setDisplayName} />
           <TextField
             label="이메일"
@@ -70,9 +71,9 @@ const SignUpScreen = () => {
           />
           <TextField label="비밀번호" secureTextEntry value={password} onChangeText={setPassword} />
 
-          <View style={{ gap: 10 }}>
-            <Text style={{ fontWeight: '600', color: '#3a3127' }}>선호 브랜드</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+          <View style={styles.brandSection}>
+            <Text style={styles.fieldLabel}>선호 브랜드</Text>
+            <View style={styles.tagGrid}>
               {sortedBrands.map((brand) => (
                 <TagChip key={brand} label={brand} selected={selectedBrands.includes(brand)} onPress={() => toggleBrand(brand)} />
               ))}
@@ -82,9 +83,9 @@ const SignUpScreen = () => {
           <Button label={submitting ? '가입 중...' : '회원가입'} onPress={handleSignUp} disabled={submitting} />
         </View>
 
-        <Text style={{ color: '#3a3127', textAlign: 'center' }}>
+        <Text style={styles.footer}>
           이미 계정이 있으신가요?{' '}
-          <Link href="/(auth)/sign-in" style={{ fontWeight: '700', color: '#9a7b50' }}>
+          <Link href="/(auth)/sign-in" style={styles.link}>
             로그인
           </Link>
         </Text>
@@ -92,5 +93,45 @@ const SignUpScreen = () => {
     </Screen>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    gap: spacing(8),
+  },
+  header: {
+    gap: spacing(3),
+  },
+  title: {
+    ...typography.heading1,
+    fontSize: 28,
+  },
+  subtitle: {
+    ...typography.body,
+    fontSize: 15,
+  },
+  form: {
+    gap: spacing(5),
+  },
+  brandSection: {
+    gap: spacing(2.5),
+  },
+  fieldLabel: {
+    ...typography.label,
+  },
+  tagGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing(2),
+  },
+  footer: {
+    ...typography.body,
+    color: colors.textPrimary,
+    textAlign: 'center',
+  },
+  link: {
+    fontWeight: '700',
+    color: colors.accent,
+  },
+});
 
 export default SignUpScreen;

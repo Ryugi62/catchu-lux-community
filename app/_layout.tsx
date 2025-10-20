@@ -1,7 +1,8 @@
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
-import { ActivityIndicator, View } from 'react-native';
-import { AuthProvider, useAuthContext } from '../src/providers/AuthProvider';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { AuthProvider, useAuthContext } from '../src/modules/auth';
+import { colors } from '../src/theme';
 
 const RootGate = () => {
   const { user, isLoading } = useAuthContext();
@@ -22,8 +23,8 @@ const RootGate = () => {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f2ece5' }}>
-        <ActivityIndicator size="large" color="#1f1b16" />
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" color={colors.textPrimary} />
       </View>
     );
   }
@@ -36,5 +37,14 @@ const RootLayout = () => (
     <RootGate />
   </AuthProvider>
 );
+
+const styles = StyleSheet.create({
+  loader: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.backgroundPrimary,
+  },
+});
 
 export default RootLayout;

@@ -52,7 +52,6 @@ let firestore: Firestore;
 try {
   firestore = initializeFirestore(app, {
     experimentalForceLongPolling: true,
-    useFetchStreams: false,
   });
 } catch (error) {
   firestore = getFirestore(app);
