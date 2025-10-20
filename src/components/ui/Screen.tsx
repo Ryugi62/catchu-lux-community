@@ -1,6 +1,7 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import type { ReactNode } from 'react';
+import { colors, spacing } from '../../theme';
 
 interface Props {
   children: ReactNode;
@@ -8,7 +9,11 @@ interface Props {
   backgroundColor?: string;
 }
 
-export const Screen: React.FC<Props> = ({ children, scrollable = true, backgroundColor = '#f2ece5' }) => (
+export const Screen: React.FC<Props> = ({
+  children,
+  scrollable = true,
+  backgroundColor = colors.backgroundPrimary,
+}) => (
   <SafeAreaView style={[styles.safeArea, { backgroundColor }]}> 
     {scrollable ? (
       <ScrollView style={[styles.container, { backgroundColor }]} contentContainerStyle={styles.contentContainer}>
@@ -28,7 +33,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    padding: 20,
-    gap: 24,
+    padding: spacing(5),
+    gap: spacing(6),
   },
 });

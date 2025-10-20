@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
+import { colors, radii, spacing, typography } from '../../theme';
 
 interface Props {
   label: string;
@@ -21,28 +22,29 @@ export const TagChip: React.FC<Props> = ({ label, selected, onPress }) => (
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing(3.5),
+    paddingVertical: spacing(2),
     borderWidth: 1,
-    borderColor: '#d6cec4',
-    marginRight: 8,
-    marginBottom: 8,
+    borderColor: colors.borderSubtle,
+    marginRight: spacing(2),
+    marginBottom: spacing(2),
+    backgroundColor: colors.surfacePrimary,
   },
   selected: {
-    backgroundColor: '#1f1b16',
-    borderColor: '#1f1b16',
+    backgroundColor: colors.textPrimary,
+    borderColor: colors.textPrimary,
   },
   unselected: {
-    backgroundColor: '#fdf9f4',
+    backgroundColor: colors.surfacePrimary,
   },
   label: {
-    color: '#3a3127',
+    ...typography.label,
     fontSize: 13,
-    fontWeight: '600',
+    color: colors.textPrimary,
   },
   labelSelected: {
-    color: '#fdf9f4',
+    color: colors.surfacePrimary,
   },
   pressed: {
     opacity: 0.7,

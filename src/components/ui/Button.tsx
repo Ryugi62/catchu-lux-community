@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
 import type { ReactNode } from 'react';
+import { colors, radii, spacing, typography } from '../../theme';
 
 interface ButtonProps {
   label: string;
@@ -33,21 +34,22 @@ export const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: 48,
-    borderRadius: 999,
+    minHeight: spacing(12),
+    borderRadius: radii.pill,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 20,
+    gap: spacing(2),
+    paddingHorizontal: spacing(5),
+    backgroundColor: colors.textPrimary,
   },
   primary: {
-    backgroundColor: '#1f1b16',
+    backgroundColor: colors.textPrimary,
   },
   secondary: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#1f1b16',
+    borderColor: colors.textPrimary,
   },
   pressed: {
     opacity: 0.7,
@@ -56,11 +58,11 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   label: {
-    color: '#f9f5ef',
+    ...typography.body,
     fontWeight: '600',
-    fontSize: 16,
+    color: colors.surfacePrimary,
   },
   labelSecondary: {
-    color: '#1f1b16',
+    color: colors.textPrimary,
   },
 });

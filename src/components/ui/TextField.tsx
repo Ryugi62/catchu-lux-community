@@ -1,5 +1,6 @@
 import { forwardRef } from 'react';
 import { StyleSheet, TextInput, Text, View, type TextInputProps } from 'react-native';
+import { colors, radii, spacing, typography } from '../../theme';
 
 interface Props extends TextInputProps {
   label: string;
@@ -11,7 +12,7 @@ export const TextField = forwardRef<TextInput, Props>(({ label, error, style, ..
     <Text style={styles.label}>{label}</Text>
     <TextInput
       ref={ref}
-      placeholderTextColor="#9a948c"
+      placeholderTextColor={colors.textPlaceholder}
       style={[styles.input, style, error ? styles.inputError : null]}
       {...props}
     />
@@ -24,28 +25,27 @@ TextField.displayName = 'TextField';
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    gap: 6,
+    gap: spacing(1.5),
   },
   label: {
+    ...typography.label,
     fontSize: 14,
-    color: '#3a3127',
-    fontWeight: '600',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#d6cec4',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    borderColor: colors.borderSubtle,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing(4),
+    paddingVertical: spacing(3.5),
     fontSize: 15,
-    color: '#1f1b16',
-    backgroundColor: '#fdf9f4',
+    color: colors.textPrimary,
+    backgroundColor: colors.surfacePrimary,
   },
   inputError: {
-    borderColor: '#cc5b63',
+    borderColor: colors.dangerStrong,
   },
   error: {
-    color: '#cc5b63',
+    color: colors.dangerStrong,
     fontSize: 12,
   },
 });
