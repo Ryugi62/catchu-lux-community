@@ -36,6 +36,7 @@ const firebaseConfig = {
     'EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'
   ),
   appId: getEnvValue('firebaseAppId', 'EXPO_PUBLIC_FIREBASE_APP_ID'),
+  measurementId: getEnvValue('firebaseMeasurementId', 'EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID'),
 };
 
 const missingKey = Object.entries(firebaseConfig).find(([, value]) => !value);

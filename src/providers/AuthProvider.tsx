@@ -33,10 +33,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-      setIsLoading(false);
-    });
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (firebaseUser) => {
+        console.log('[Auth] auth state changed', firebaseUser ? firebaseUser.uid : 'anonymous');
+        setUser(firebaseUser);
+        setIsLoading(false);
+      },
+      (error) => {
+        console.error('[Auth] onAuthStateChanged error', error);
+        setIsLoading(false);
+      }
+    );
 
     return unsubscribe;
   }, []);
@@ -45,20 +53,38 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     user,
     isLoading,
     async signIn(email: string, password: string) {
-      await signInWithEmailAndPassword(auth, email, password);
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        console.log('[Auth] signIn success');
+      } catch (error) {
+        console.error('[Auth] signIn failed', error);
+        throw error;
+      }
     },
     async signUp({ email, password, displayName, preferredBrands }: SignUpPayload) {
-      const credential = await createUserWithEmailAndPassword(auth, email, password);
-      await updateProfile(credential.user, { displayName });
-      await setDoc(doc(firestore, 'users', credential.user.uid), {
-        displayName,
-        email,
-        preferredBrands,
-        createdAt: serverTimestamp(),
-      });
+      try {
+        const credential = await createUserWithEmailAndPassword(auth, email, password);
+        console.log('[Auth] signUp success', credential.user.uid);
+        await updateProfile(credential.user, { displayName });
+        await setDoc(doc(firestore, 'users', credential.user.uid), {
+          displayName,
+          email,
+          preferredBrands,
+          createdAt: serverTimestamp(),
+        });
+      } catch (error) {
+        console.error('[Auth] signUp failed', error);
+        throw error;
+      }
     },
     async signOut() {
-      await signOut(auth);
+      try {
+        await signOut(auth);
+        console.log('[Auth] signOut success');
+      } catch (error) {
+        console.error('[Auth] signOut failed', error);
+        throw error;
+      }
     },
   }), [user, isLoading]);
 
