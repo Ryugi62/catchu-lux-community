@@ -1,4 +1,4 @@
-import { initializeApp, getApp, getApps } from 'firebase/app';
+import { initializeApp, getApp, getApps } from "firebase/app";
 import {
   getAuth,
   type Auth,
@@ -9,23 +9,33 @@ import {
   signOut,
   onAuthStateChanged,
   type User,
-} from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
-import Constants from 'expo-constants';
+} from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
+import Constants from "expo-constants";
+
+const getEnvValue = (extraKey: string, envKey: keyof NodeJS.ProcessEnv) => {
+  const envValue = process.env[envKey];
+  if (envValue && envValue !== 'undefined') {
+    return envValue;
+  }
+  const extraValue = Constants.expoConfig?.extra?.[extraKey];
+  if (typeof extraValue === 'string' && extraValue.length > 0) {
+    return extraValue;
+  }
+  return undefined;
+};
 
 const firebaseConfig = {
-  apiKey: Constants.expoConfig?.extra?.firebaseApiKey ?? process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
-  authDomain:
-    Constants.expoConfig?.extra?.firebaseAuthDomain ?? process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId:
-    Constants.expoConfig?.extra?.firebaseProjectId ?? process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket:
-    Constants.expoConfig?.extra?.firebaseStorageBucket ?? process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId:
-    Constants.expoConfig?.extra?.firebaseMessagingSenderId ??
-    process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: Constants.expoConfig?.extra?.firebaseAppId ?? process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+  apiKey: getEnvValue('firebaseApiKey', 'EXPO_PUBLIC_FIREBASE_API_KEY'),
+  authDomain: getEnvValue('firebaseAuthDomain', 'EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN'),
+  projectId: getEnvValue('firebaseProjectId', 'EXPO_PUBLIC_FIREBASE_PROJECT_ID'),
+  storageBucket: getEnvValue('firebaseStorageBucket', 'EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET'),
+  messagingSenderId: getEnvValue(
+    'firebaseMessagingSenderId',
+    'EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'
+  ),
+  appId: getEnvValue('firebaseAppId', 'EXPO_PUBLIC_FIREBASE_APP_ID'),
 };
 
 const missingKey = Object.entries(firebaseConfig).find(([, value]) => !value);
