@@ -1,14 +1,15 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Screen } from '../../../src/components/ui/Screen';
 import { TextField } from '../../../src/components/ui/TextField';
 import { TagChip } from '../../../src/components/ui/TagChip';
 import { Button } from '../../../src/components/ui/Button';
 import { BRANDS, CATEGORIES } from '../../../constants/brands';
-import { useAuth } from '../../../src/hooks/useAuth';
-import { createPost } from '../../../src/features/posts/api';
+import { useAuth } from '../../../src/modules/auth';
+import { createPost } from '../../../src/modules/posts';
+import { colors, radii, spacing, typography } from '../../../src/theme';
 
 const TAG_OPTIONS = ['신상 소식', '리셀 가치', '실착 후기', '케어 팁'];
 
@@ -88,19 +89,19 @@ const NewPostScreen = () => {
 
   return (
     <Screen>
-      <View style={{ gap: 24 }}>
-        <View style={{ gap: 12 }}>
-          <Text style={{ fontSize: 24, fontWeight: '700', color: '#1f1b16' }}>새로운 인사이트 공유</Text>
-          <Text style={{ color: '#5c524b' }}>
+      <View style={styles.container}>
+        <View style={styles.intro}>
+          <Text style={styles.introTitle}>새로운 인사이트 공유</Text>
+          <Text style={styles.introBody}>
             명품 신상, 착용 후기, 리셀 정보를 공유하면 커뮤니티가 더 풍성해집니다.
           </Text>
         </View>
 
-        <View style={{ gap: 16 }}>
+        <View style={styles.formSection}>
           <TextField label="제목" value={title} onChangeText={setTitle} placeholder="예: 루이비통 24FW 신상 하이라이트" />
-          <View style={{ gap: 8 }}>
-            <Text style={{ fontWeight: '600', color: '#3a3127' }}>브랜드</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 4 }}>
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>브랜드</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.brandList}>
               {BRANDS.map((item) => (
                 <TagChip
                   key={item}
@@ -112,9 +113,9 @@ const NewPostScreen = () => {
             </ScrollView>
           </View>
 
-          <View style={{ gap: 8 }}>
-            <Text style={{ fontWeight: '600', color: '#3a3127' }}>카테고리</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>카테고리</Text>
+            <View style={styles.tagGrid}>
               {CATEGORIES.map((item) => (
                 <TagChip
                   key={item}
@@ -126,9 +127,9 @@ const NewPostScreen = () => {
             </View>
           </View>
 
-          <View style={{ gap: 8 }}>
-            <Text style={{ fontWeight: '600', color: '#3a3127' }}>태그</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>태그</Text>
+            <View style={styles.tagGrid}>
               {TAG_OPTIONS.map((tag) => (
                 <TagChip
                   key={tag}
@@ -140,8 +141,8 @@ const NewPostScreen = () => {
             </View>
           </View>
 
-          <View style={{ gap: 8 }}>
-            <Text style={{ fontWeight: '600', color: '#3a3127' }}>본문</Text>
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>본문</Text>
             <TextInput
               value={content}
               onChangeText={setContent}
@@ -149,63 +150,34 @@ const NewPostScreen = () => {
               numberOfLines={8}
               placeholder="브랜드 스토리, 소재, 착용감, 시세 전망 등 상세 정보를 입력해주세요."
               textAlignVertical="top"
-              style={{
-                borderWidth: 1,
-                borderColor: '#d6cec4',
-                borderRadius: 16,
-                backgroundColor: '#fdf9f4',
-                padding: 16,
-                minHeight: 160,
-                lineHeight: 20,
-                color: '#1f1b16',
-              }}
+              style={styles.bodyInput}
             />
           </View>
 
-          <View style={{ gap: 8 }}>
-            <Text style={{ fontWeight: '600', color: '#3a3127' }}>이미지 ({imageUris.length}/5)</Text>
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>이미지 ({imageUris.length}/5)</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 12, paddingVertical: 4 }}
+              contentContainerStyle={styles.imageList}
             >
               {imageUris.map((uri) => (
-                <View key={uri} style={{ position: 'relative' }}>
-                  <Image source={{ uri }} style={{ width: 140, height: 140, borderRadius: 20 }} />
+                <View key={uri} style={styles.imageWrapper}>
+                  <Image source={{ uri }} style={styles.image} />
                   <Pressable
                     onPress={() => removeImage(uri)}
-                    style={{
-                      position: 'absolute',
-                      top: 8,
-                      right: 8,
-                      backgroundColor: 'rgba(31, 27, 22, 0.8)',
-                      borderRadius: 999,
-                      width: 28,
-                      height: 28,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
+                    style={styles.removeButton}
                   >
-                    <Text style={{ color: '#fdf9f4', fontWeight: '700' }}>×</Text>
+                    <Text style={styles.removeButtonText}>×</Text>
                   </Pressable>
                 </View>
               ))}
               {imageUris.length < 5 ? (
                 <Pressable
                   onPress={requestImage}
-                  style={{
-                    width: 140,
-                    height: 140,
-                    borderRadius: 20,
-                    borderWidth: 1,
-                    borderStyle: 'dashed',
-                    borderColor: '#9a7b50',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: '#fdf9f4',
-                  }}
+                  style={styles.addImageButton}
                 >
-                  <Text style={{ color: '#9a7b50', fontWeight: '600' }}>이미지 추가</Text>
+                  <Text style={styles.addImageText}>이미지 추가</Text>
                 </Pressable>
               ) : null}
             </ScrollView>
@@ -221,5 +193,93 @@ const NewPostScreen = () => {
     </Screen>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    gap: spacing(6),
+  },
+  intro: {
+    gap: spacing(3),
+  },
+  introTitle: {
+    ...typography.heading1,
+  },
+  introBody: {
+    ...typography.body,
+  },
+  formSection: {
+    gap: spacing(4),
+  },
+  fieldGroup: {
+    gap: spacing(2),
+  },
+  fieldLabel: {
+    ...typography.label,
+  },
+  brandList: {
+    flexDirection: 'row',
+    paddingVertical: spacing(1),
+    gap: spacing(2),
+  },
+  tagGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing(2),
+  },
+  bodyInput: {
+    borderWidth: 1,
+    borderColor: colors.borderSubtle,
+    borderRadius: radii.md,
+    backgroundColor: colors.surfacePrimary,
+    padding: spacing(4),
+    minHeight: 160,
+    lineHeight: 20,
+    color: colors.textPrimary,
+    textAlignVertical: 'top',
+  },
+  imageList: {
+    flexDirection: 'row',
+    gap: spacing(3),
+    paddingVertical: spacing(1),
+  },
+  imageWrapper: {
+    position: 'relative',
+  },
+  image: {
+    width: spacing(35),
+    height: spacing(35),
+    borderRadius: radii.lg,
+  },
+  removeButton: {
+    position: 'absolute',
+    top: spacing(2),
+    right: spacing(2),
+    backgroundColor: 'rgba(31, 27, 22, 0.8)',
+    borderRadius: radii.pill,
+    width: spacing(7),
+    height: spacing(7),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  removeButtonText: {
+    color: colors.surfacePrimary,
+    fontWeight: '700',
+  },
+  addImageButton: {
+    width: spacing(35),
+    height: spacing(35),
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfacePrimary,
+  },
+  addImageText: {
+    color: colors.accent,
+    fontWeight: '600',
+  },
+});
 
 export default NewPostScreen;

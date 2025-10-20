@@ -1,22 +1,26 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   ActivityIndicator,
   Image,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  Share,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
   View,
 } from 'react-native';
 import { COMMENT_TAGS } from '../../../constants/brands';
-import { usePost } from '../../../src/hooks/usePost';
-import { useComments } from '../../../src/hooks/useComments';
-import { useAuth } from '../../../src/hooks/useAuth';
-import { createComment } from '../../../src/features/comments/api';
+import { usePost } from '../../../src/modules/posts';
+import { useComments, createComment } from '../../../src/modules/comments';
+import { useAuth } from '../../../src/modules/auth';
 import { TagChip } from '../../../src/components/ui/TagChip';
 import { Button } from '../../../src/components/ui/Button';
+import { colors, radii, shadows, spacing, typography } from '../../../src/theme';
 
 const PostDetailScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -27,6 +31,11 @@ const PostDetailScreen = () => {
   const [commentText, setCommentText] = useState('');
   const [toneTag, setToneTag] = useState<string>(COMMENT_TAGS[0]);
   const [submitting, setSubmitting] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  useEffect(() => {
+    setActiveImageIndex(0);
+  }, [postId]);
 
   const handleSubmit = async () => {
     if (!user) {
@@ -54,10 +63,49 @@ const PostDetailScreen = () => {
     }
   };
 
+  const handleShare = async () => {
+    if (!post) {
+      return;
+    }
+    try {
+      await Share.share({
+        message: `${post.title}\n\n${post.content}`,
+      });
+    } catch (error) {
+      console.error('[PostDetail] share failed', error);
+      Alert.alert('공유 실패', '게시글을 공유하는 중 문제가 발생했습니다.');
+    }
+  };
+
+  const handleImageScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (!post?.imageUrls.length) {
+      return;
+    }
+    const { contentOffset, layoutMeasurement } = event.nativeEvent;
+    if (!layoutMeasurement?.width) {
+      return;
+    }
+    const index = Math.round(contentOffset.x / layoutMeasurement.width);
+    const clampedIndex = Math.min(Math.max(index, 0), post.imageUrls.length - 1);
+    setActiveImageIndex(clampedIndex);
+  };
+
+  const formatDateTime = (value?: Date) => {
+    if (!value) {
+      return '방금 전';
+    }
+    return value.toLocaleString('ko-KR', {
+      month: 'numeric',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
   if (isLoading || !post) {
     return (
       <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#1f1b16" />
+        <ActivityIndicator size="large" color={colors.textPrimary} />
       </View>
     );
   }
@@ -65,27 +113,39 @@ const PostDetailScreen = () => {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {post.imageUrls.length > 0 ? (
-        <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={styles.carousel}>
-          {post.imageUrls.map((uri) => (
-            <Image key={uri} source={{ uri }} style={styles.carouselImage} />
-          ))}
-        </ScrollView>
+        <View style={styles.carouselContainer}>
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            style={styles.carousel}
+            contentContainerStyle={styles.carouselContent}
+            onMomentumScrollEnd={handleImageScroll}
+          >
+            {post.imageUrls.map((uri) => (
+              <Image key={uri} source={{ uri }} style={styles.carouselImage} />
+            ))}
+          </ScrollView>
+          <View style={styles.carouselIndicator}>
+            <Text style={styles.carouselIndicatorText}>
+              {activeImageIndex + 1} / {post.imageUrls.length}
+            </Text>
+          </View>
+        </View>
       ) : (
-        <View style={[styles.carousel, styles.carouselFallback]}>
-          <Text style={{ color: '#746a63', fontWeight: '600' }}>이미지가 등록되지 않았습니다.</Text>
+        <View style={[styles.carouselContainer, styles.carouselFallback]}>
+          <Text style={styles.carouselFallbackText}>이미지가 등록되지 않았습니다.</Text>
         </View>
       )}
 
-      <View style={{ gap: 12 }}>
+      <View style={styles.section}>
         <Text style={styles.brand}>{post.brand}</Text>
         <Text style={styles.title}>{post.title}</Text>
         <Text style={styles.meta}>작성자: {post.authorName ?? '익명'}</Text>
-        <Text style={styles.meta}>
-          작성일: {post.createdAt ? post.createdAt.toLocaleString('ko-KR') : '방금 전'}
-        </Text>
+        <Text style={styles.meta}>작성일: {formatDateTime(post.createdAt)}</Text>
         <View style={styles.tagRow}>
           <Text style={styles.category}>{post.category}</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+          <View style={styles.tagList}>
             {post.tags.map((tag) => (
               <Text key={tag} style={styles.postTag}>
                 #{tag}
@@ -94,27 +154,34 @@ const PostDetailScreen = () => {
           </View>
         </View>
         <Text style={styles.body}>{post.content}</Text>
+        <View style={styles.shareRow}>
+          <Pressable style={styles.shareButton} onPress={handleShare}>
+            <Text style={styles.shareButtonLabel}>공유하기</Text>
+          </Pressable>
+        </View>
       </View>
 
-      <View style={{ gap: 12 }}>
+      <View style={styles.section}>
         <Text style={styles.commentTitle}>커뮤니티 인사이트</Text>
         {commentsLoading ? (
-          <ActivityIndicator color="#1f1b16" />
+          <ActivityIndicator color={colors.textPrimary} />
         ) : commentsError ? (
           <View style={styles.commentError}>
             <Text style={styles.commentErrorTitle}>댓글을 불러오지 못했습니다.</Text>
             <Text style={styles.commentErrorBody}>{commentsError}</Text>
           </View>
         ) : (
-          <View style={{ gap: 12 }}>
+          <View style={styles.commentList}>
             {comments.length === 0 ? (
-              <Text style={{ color: '#5c524b' }}>첫 번째 의견을 남겨주세요.</Text>
+              <Text style={styles.commentEmpty}>첫 번째 의견을 남겨주세요.</Text>
             ) : (
               comments.map((comment) => (
                 <View key={comment.id} style={styles.commentCard}>
                   <Text style={styles.commentTag}>{comment.toneTag}</Text>
                   <Text style={styles.commentContent}>{comment.content}</Text>
-                  <Text style={styles.commentMeta}>{comment.authorName ?? '익명'}</Text>
+                  <Text style={styles.commentMeta}>
+                    {comment.authorName ?? '익명'} | {formatDateTime(comment.createdAt)}
+                  </Text>
                 </View>
               ))
             )}
@@ -122,9 +189,9 @@ const PostDetailScreen = () => {
         )}
       </View>
 
-      <View style={{ gap: 12 }}>
+      <View style={styles.section}>
         <Text style={styles.commentTitle}>의견 남기기</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        <View style={styles.tagPicker}>
           {COMMENT_TAGS.map((tag) => (
             <TagChip key={tag} label={tag} selected={toneTag === tag} onPress={() => setToneTag(tag)} />
           ))}
@@ -149,45 +216,74 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f2ece5',
+    backgroundColor: colors.backgroundPrimary,
   },
   container: {
     flex: 1,
-    backgroundColor: '#f2ece5',
+    backgroundColor: colors.backgroundPrimary,
   },
   content: {
-    padding: 20,
-    gap: 24,
-    paddingBottom: 60,
+    padding: spacing(5),
+    gap: spacing(6),
+    paddingBottom: spacing(15),
+  },
+  carouselContainer: {
+    position: 'relative',
+    height: 280,
+    borderRadius: radii.xl,
+    overflow: 'hidden',
+    backgroundColor: colors.surfacePrimary,
   },
   carousel: {
-    height: 280,
-    borderRadius: 24,
-    overflow: 'hidden',
+    flexGrow: 0,
+  },
+  carouselContent: {
+    paddingRight: spacing(3),
   },
   carouselImage: {
-    width: 320,
+    width: spacing(80),
     height: 280,
-    marginRight: 12,
-    borderRadius: 24,
+    marginRight: spacing(3),
+    borderRadius: radii.xl,
   },
   carouselFallback: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#ded4c8',
+    backgroundColor: colors.borderSubtle,
+  },
+  carouselFallbackText: {
+    color: colors.textMuted,
+    fontWeight: '600',
+  },
+  carouselIndicator: {
+    position: 'absolute',
+    right: spacing(3),
+    bottom: spacing(3),
+    paddingHorizontal: spacing(2.5),
+    paddingVertical: spacing(1),
+    borderRadius: radii.pill,
+    backgroundColor: 'rgba(31, 27, 22, 0.75)',
+  },
+  carouselIndicatorText: {
+    color: colors.surfacePrimary,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  section: {
+    gap: spacing(3),
   },
   brand: {
-    color: '#9a7b50',
+    color: colors.accent,
     fontSize: 18,
     fontWeight: '700',
   },
   title: {
+    ...typography.heading1,
     fontSize: 26,
-    fontWeight: '700',
-    color: '#1f1b16',
   },
   meta: {
-    color: '#5c524b',
+    ...typography.caption,
     fontSize: 13,
   },
   tagRow: {
@@ -195,80 +291,110 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: spacing(2),
+  },
+  tagList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
   category: {
-    backgroundColor: '#1f1b16',
-    color: '#fdf9f4',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
+    backgroundColor: colors.textPrimary,
+    color: colors.surfacePrimary,
+    paddingHorizontal: spacing(3),
+    paddingVertical: spacing(1.5),
+    borderRadius: radii.pill,
     fontSize: 12,
   },
   postTag: {
-    marginRight: 8,
-    color: '#746a63',
+    marginRight: spacing(2),
+    color: colors.textMuted,
     fontWeight: '600',
   },
   body: {
-    color: '#3a3127',
+    ...typography.body,
     lineHeight: 22,
-    fontSize: 16,
+  },
+  shareRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  shareButton: {
+    paddingHorizontal: spacing(3),
+    paddingVertical: spacing(1.5),
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surfacePrimary,
+  },
+  shareButtonLabel: {
+    ...typography.caption,
+    fontWeight: '600',
+    color: colors.accentStrong,
   },
   commentTitle: {
+    ...typography.heading2,
     fontSize: 20,
-    fontWeight: '700',
-    color: '#1f1b16',
+  },
+  commentList: {
+    gap: spacing(3),
+  },
+  commentEmpty: {
+    ...typography.body,
+    textAlign: 'center',
   },
   commentCard: {
-    backgroundColor: '#fffaf2',
-    borderRadius: 20,
-    padding: 16,
+    backgroundColor: colors.surfacePrimary,
+    borderRadius: radii.lg,
+    padding: spacing(4),
     borderWidth: 1,
-    borderColor: '#eadfce',
-    gap: 8,
+    borderColor: colors.borderStrong,
+    gap: spacing(2),
+    ...shadows.card,
   },
   commentTag: {
     alignSelf: 'flex-start',
-    backgroundColor: '#1f1b16',
-    color: '#fdf9f4',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
+    backgroundColor: colors.textPrimary,
+    color: colors.surfacePrimary,
+    paddingHorizontal: spacing(2.5),
+    paddingVertical: spacing(1),
+    borderRadius: radii.pill,
     fontSize: 12,
   },
   commentContent: {
-    color: '#3a3127',
-    lineHeight: 20,
+    ...typography.body,
   },
   commentMeta: {
-    color: '#746a63',
-    fontSize: 12,
+    ...typography.caption,
   },
   commentInput: {
     borderWidth: 1,
-    borderColor: '#d6cec4',
-    borderRadius: 16,
-    backgroundColor: '#fdf9f4',
-    padding: 16,
+    borderColor: colors.borderSubtle,
+    borderRadius: radii.md,
+    backgroundColor: colors.surfacePrimary,
+    padding: spacing(4),
     minHeight: 120,
-    color: '#1f1b16',
+    color: colors.textPrimary,
+    textAlignVertical: 'top',
   },
   commentError: {
-    backgroundColor: '#fdf1f0',
-    borderRadius: 16,
-    padding: 16,
-    gap: 8,
+    backgroundColor: colors.surfaceSecondary,
+    borderRadius: radii.md,
+    padding: spacing(4),
+    gap: spacing(2),
     borderWidth: 1,
-    borderColor: '#f5c5c5',
+    borderColor: colors.danger,
   },
   commentErrorTitle: {
     fontWeight: '700',
-    color: '#c05d5d',
+    color: colors.danger,
   },
   commentErrorBody: {
-    color: '#5c524b',
-    lineHeight: 20,
+    ...typography.body,
+  },
+  tagPicker: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing(2),
   },
 });
 
