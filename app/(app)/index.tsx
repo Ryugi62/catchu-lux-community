@@ -1,9 +1,9 @@
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
+import { Image } from 'expo-image';
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   Pressable,
   SafeAreaView,
   StyleSheet,
@@ -134,7 +134,13 @@ const FeedScreen = () => {
               style={styles.card}
             >
               {item.imageUrls?.[0] ? (
-                <Image source={{ uri: item.imageUrls[0] }} style={styles.cardImage} />
+                <Image
+                  source={{ uri: item.imageUrls[0] }}
+                  style={styles.cardImage}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                  transition={200}
+                />
               ) : (
                 <View style={[styles.cardImage, styles.cardImageFallback]}> 
                   <Text style={styles.cardImageFallbackText}>이미지 준비중</Text>

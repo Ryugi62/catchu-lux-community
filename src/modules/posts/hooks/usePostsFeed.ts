@@ -155,6 +155,7 @@ export const usePostsFeed = () => {
     clearFilters: () => {
       setBrandFilter(null);
       setCategoryFilter(null);
+      refresh();
     },
   };
 };
