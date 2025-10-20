@@ -1,19 +1,20 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   ActivityIndicator,
-  Image,
   Pressable,
+  FlatList,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   Share,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
   View,
+  type ViewToken,
+  type ViewabilityConfig,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { COMMENT_TAGS } from '../../../constants/brands';
 import { usePost } from '../../../src/modules/posts';
 import { useComments, createComment } from '../../../src/modules/comments';
@@ -32,6 +33,18 @@ const PostDetailScreen = () => {
   const [toneTag, setToneTag] = useState<string>(COMMENT_TAGS[0]);
   const [submitting, setSubmitting] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const viewabilityConfig = useRef<ViewabilityConfig>({ itemVisiblePercentThreshold: 70 }).current;
+  const onViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      if (viewableItems.length === 0) {
+        return;
+      }
+      const nextIndex = viewableItems[0]?.index ?? 0;
+      if (typeof nextIndex === 'number') {
+        setActiveImageIndex(nextIndex);
+      }
+    }
+  );
 
   useEffect(() => {
     setActiveImageIndex(0);
@@ -77,19 +90,6 @@ const PostDetailScreen = () => {
     }
   };
 
-  const handleImageScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    if (!post?.imageUrls.length) {
-      return;
-    }
-    const { contentOffset, layoutMeasurement } = event.nativeEvent;
-    if (!layoutMeasurement?.width) {
-      return;
-    }
-    const index = Math.round(contentOffset.x / layoutMeasurement.width);
-    const clampedIndex = Math.min(Math.max(index, 0), post.imageUrls.length - 1);
-    setActiveImageIndex(clampedIndex);
-  };
-
   const formatDateTime = (value?: Date) => {
     if (!value) {
       return '방금 전';
@@ -114,18 +114,25 @@ const PostDetailScreen = () => {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {post.imageUrls.length > 0 ? (
         <View style={styles.carouselContainer}>
-          <ScrollView
+          <FlatList
+            data={post.imageUrls}
+            keyExtractor={(item, index) => `${item}-${index}`}
+            renderItem={({ item }) => (
+              <Image
+                source={{ uri: item }}
+                style={styles.carouselImage}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+                transition={200}
+              />
+            )}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
             style={styles.carousel}
-            contentContainerStyle={styles.carouselContent}
-            onMomentumScrollEnd={handleImageScroll}
-          >
-            {post.imageUrls.map((uri) => (
-              <Image key={uri} source={{ uri }} style={styles.carouselImage} />
-            ))}
-          </ScrollView>
+            onViewableItemsChanged={onViewableItemsChanged.current}
+            viewabilityConfig={viewabilityConfig}
+          />
           <View style={styles.carouselIndicator}>
             <Text style={styles.carouselIndicatorText}>
               {activeImageIndex + 1} / {post.imageUrls.length}
@@ -237,14 +244,9 @@ const styles = StyleSheet.create({
   carousel: {
     flexGrow: 0,
   },
-  carouselContent: {
-    paddingRight: spacing(3),
-  },
   carouselImage: {
-    width: spacing(80),
+    width: '100%',
     height: 280,
-    marginRight: spacing(3),
-    borderRadius: radii.xl,
   },
   carouselFallback: {
     flex: 1,
