@@ -1,15 +1,26 @@
 import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import {
+  Alert,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { Screen } from '../../../src/components/ui/Screen';
 import { TextField } from '../../../src/components/ui/TextField';
 import { TagChip } from '../../../src/components/ui/TagChip';
 import { Button } from '../../../src/components/ui/Button';
+import { StatPill } from '../../../src/components/ui/StatPill';
 import { BRANDS, CATEGORIES } from '../../../constants/brands';
 import { useAuth } from '../../../src/modules/auth';
 import { createPost } from '../../../src/modules/posts';
-import { colors, radii, spacing, typography } from '../../../src/theme';
+import { colors, radii, shadows, spacing, typography } from '../../../src/theme';
 
 const TAG_OPTIONS = ['신상 소식', '리셀 가치', '실착 후기', '케어 팁'];
 
@@ -23,6 +34,8 @@ const NewPostScreen = () => {
   const [tags, setTags] = useState<string[]>([]);
   const [imageUris, setImageUris] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const contentLength = content.trim().length;
 
   const requestImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -87,18 +100,37 @@ const NewPostScreen = () => {
     }
   };
 
-  return (
-    <Screen>
-      <View style={styles.container}>
-        <View style={styles.intro}>
-          <Text style={styles.introTitle}>새로운 인사이트 공유</Text>
-          <Text style={styles.introBody}>
-            명품 신상, 착용 후기, 리셀 정보를 공유하면 커뮤니티가 더 풍성해집니다.
-          </Text>
-        </View>
+  const brandStats = useMemo(() => (brand ? '선택 완료' : '미선택'), [brand]);
 
-        <View style={styles.formSection}>
-          <TextField label="제목" value={title} onChangeText={setTitle} placeholder="예: 루이비통 24FW 신상 하이라이트" />
+  return (
+    <Screen scrollable={false}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <LinearGradient
+          colors={['#f8efe4', '#fdf9f4']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.hero}
+        >
+          <Text style={styles.heroTitle}>새로운 인사이트 공유</Text>
+          <Text style={styles.heroSubtitle}>
+            명품 신상, 착용 후기, 리셀 정보를 커뮤니티와 나누면 더 풍성한 대화가 만들어집니다.
+          </Text>
+          <View style={styles.statRow}>
+            <StatPill label="이미지" value={`${imageUris.length}/5`} />
+            <StatPill label="태그" value={tags.length} accent={tags.length ? 'primary' : 'muted'} />
+            <StatPill label="본문 글자" value={contentLength} accent={contentLength ? 'primary' : 'muted'} />
+            <StatPill label="브랜드" value={brandStats} accent={brand ? 'primary' : 'muted'} />
+          </View>
+        </LinearGradient>
+
+        <View style={styles.formCard}>
+          <TextField
+            label="제목"
+            value={title}
+            onChangeText={setTitle}
+            placeholder="예: 루이비통 24FW 신상 하이라이트"
+          />
+
           <View style={styles.fieldGroup}>
             <Text style={styles.fieldLabel}>브랜드</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.brandList}>
@@ -164,32 +196,26 @@ const NewPostScreen = () => {
               {imageUris.map((uri) => (
                 <View key={uri} style={styles.imageWrapper}>
                   <Image source={{ uri }} style={styles.image} />
-                  <Pressable
-                    onPress={() => removeImage(uri)}
-                    style={styles.removeButton}
-                  >
+                  <Pressable onPress={() => removeImage(uri)} style={styles.removeButton}>
                     <Text style={styles.removeButtonText}>×</Text>
                   </Pressable>
                 </View>
               ))}
               {imageUris.length < 5 ? (
-                <Pressable
-                  onPress={requestImage}
-                  style={styles.addImageButton}
-                >
+                <Pressable onPress={requestImage} style={styles.addImageButton}>
                   <Text style={styles.addImageText}>이미지 추가</Text>
                 </Pressable>
               ) : null}
             </ScrollView>
           </View>
-        </View>
 
-        <Button
-          label={isSubmitting ? '업로드 중...' : '글 올리기'}
-          onPress={handleSubmit}
-          disabled={isSubmitting}
-        />
-      </View>
+          <Button
+            label={isSubmitting ? '업로드 중...' : '글 올리기'}
+            onPress={handleSubmit}
+            disabled={isSubmitting}
+          />
+        </View>
+      </ScrollView>
     </Screen>
   );
 };
@@ -197,18 +223,36 @@ const NewPostScreen = () => {
 const styles = StyleSheet.create({
   container: {
     gap: spacing(6),
+    paddingBottom: spacing(12),
   },
-  intro: {
-    gap: spacing(3),
-  },
-  introTitle: {
-    ...typography.heading1,
-  },
-  introBody: {
-    ...typography.body,
-  },
-  formSection: {
+  hero: {
+    marginHorizontal: spacing(5),
+    marginTop: spacing(4),
+    borderRadius: radii.xl,
+    paddingHorizontal: spacing(5),
+    paddingVertical: spacing(5),
     gap: spacing(4),
+  },
+  heroTitle: {
+    ...typography.heading1,
+    fontSize: 26,
+  },
+  heroSubtitle: {
+    ...typography.body,
+    color: colors.textSecondary,
+  },
+  statRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing(2),
+  },
+  formCard: {
+    marginHorizontal: spacing(5),
+    backgroundColor: colors.surfacePrimary,
+    borderRadius: radii.xl,
+    padding: spacing(5),
+    gap: spacing(4),
+    ...shadows.card,
   },
   fieldGroup: {
     gap: spacing(2),
@@ -218,8 +262,8 @@ const styles = StyleSheet.create({
   },
   brandList: {
     flexDirection: 'row',
-    paddingVertical: spacing(1),
     gap: spacing(2),
+    paddingVertical: spacing(1),
   },
   tagGrid: {
     flexDirection: 'row',

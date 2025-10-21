@@ -1,5 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   Alert,
   ActivityIndicator,
@@ -22,6 +23,7 @@ import { useComments, createComment } from '../../../src/modules/comments';
 import { useAuth } from '../../../src/modules/auth';
 import { TagChip } from '../../../src/components/ui/TagChip';
 import { Button } from '../../../src/components/ui/Button';
+import { StatPill } from '../../../src/components/ui/StatPill';
 import { colors, radii, shadows, spacing, typography } from '../../../src/theme';
 
 const PostDetailScreen = () => {
@@ -115,6 +117,25 @@ const PostDetailScreen = () => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <LinearGradient
+        colors={['#f8efe4', '#fdf9f4']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.headerGradient}
+      >
+        <Text style={styles.brand}>{post.brand}</Text>
+        <Text style={styles.title}>{post.title}</Text>
+        <View style={styles.statRow}>
+          <StatPill label="댓글" value={comments.length} />
+          <StatPill label="좋아요" value={post.likeCount ?? 0} accent="muted" />
+          <StatPill
+            label="작성일"
+            value={post.createdAt ? post.createdAt.toLocaleDateString('ko-KR') : '방금 전'}
+            accent="muted"
+          />
+        </View>
+      </LinearGradient>
+
       {post.imageUrls.length > 0 ? (
         <View style={styles.carouselContainer}>
           <FlatList
@@ -147,8 +168,6 @@ const PostDetailScreen = () => {
       )}
 
       <View style={styles.section}>
-        <Text style={styles.brand}>{post.brand}</Text>
-        <Text style={styles.title}>{post.title}</Text>
         <Text style={styles.meta}>작성자: {post.authorName ?? '익명'}</Text>
         <Text style={styles.meta}>작성일: {formatDateTime(post.createdAt)}</Text>
         <View style={styles.tagRow}>
@@ -171,6 +190,7 @@ const PostDetailScreen = () => {
 
       <View style={styles.section}>
         <Text style={styles.commentTitle}>커뮤니티 인사이트</Text>
+        <Text style={styles.commentSubtitle}>{comments.length}개의 의견</Text>
         {commentsLoading ? (
           <ActivityIndicator color={colors.textPrimary} />
         ) : commentsError ? (
@@ -199,6 +219,7 @@ const PostDetailScreen = () => {
 
       <View style={styles.section}>
         <Text style={styles.commentTitle}>의견 남기기</Text>
+        <Text style={styles.commentSubtitle}>톤 태그를 선택하고 진솔한 이야기를 들려주세요.</Text>
         <View style={styles.tagPicker}>
           {COMMENT_TAGS.map((tag) => (
             <TagChip key={tag} label={tag} selected={toneTag === tag} onPress={() => setToneTag(tag)} />
@@ -234,6 +255,13 @@ const styles = StyleSheet.create({
     padding: spacing(5),
     gap: spacing(6),
     paddingBottom: spacing(15),
+  },
+  headerGradient: {
+    paddingHorizontal: spacing(5),
+    paddingTop: spacing(3),
+    paddingBottom: spacing(4),
+    gap: spacing(3),
+    borderRadius: radii.xl,
   },
   carouselContainer: {
     position: 'relative',
@@ -275,6 +303,10 @@ const styles = StyleSheet.create({
   },
   section: {
     gap: spacing(3),
+    backgroundColor: colors.surfacePrimary,
+    padding: spacing(4),
+    borderRadius: radii.lg,
+    ...shadows.card,
   },
   brand: {
     color: colors.accent,
@@ -317,6 +349,11 @@ const styles = StyleSheet.create({
     ...typography.body,
     lineHeight: 22,
   },
+  statRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing(2),
+  },
   shareRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -337,6 +374,10 @@ const styles = StyleSheet.create({
   commentTitle: {
     ...typography.heading2,
     fontSize: 20,
+  },
+  commentSubtitle: {
+    ...typography.caption,
+    color: colors.textMuted,
   },
   commentList: {
     gap: spacing(3),

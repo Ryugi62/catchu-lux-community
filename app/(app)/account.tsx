@@ -1,13 +1,15 @@
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Screen } from '../../src/components/ui/Screen';
 import { TextField } from '../../src/components/ui/TextField';
 import { TagChip } from '../../src/components/ui/TagChip';
 import { Button } from '../../src/components/ui/Button';
+import { StatPill } from '../../src/components/ui/StatPill';
 import { BRANDS } from '../../constants/brands';
 import { useAuth, getUserProfile, type UserProfile } from '../../src/modules/auth';
-import { colors, spacing, typography } from '../../src/theme';
+import { colors, radii, shadows, spacing, typography } from '../../src/theme';
 
 const AccountScreen = () => {
   const router = useRouter();
@@ -42,6 +44,7 @@ const AccountScreen = () => {
   }, [user]);
 
   const sortedBrands = useMemo(() => BRANDS.slice().sort(), []);
+  const joinedDate = profile?.createdAt?.toLocaleDateString('ko-KR') ?? '정보 없음';
 
   const toggleBrand = (brand: string) => {
     setPreferredBrands((current) =>
@@ -99,23 +102,28 @@ const AccountScreen = () => {
 
   return (
     <Screen scrollable={false}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>계정 설정</Text>
-          <Text style={styles.subtitle}>닉네임과 선호 브랜드를 관리할 수 있어요.</Text>
-        </View>
+      <ScrollView contentContainerStyle={styles.container}>
+        <LinearGradient
+          colors={['#f8efe4', '#fdf9f4']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.hero}
+        >
+          <Text style={styles.heroTitle}>계정 설정</Text>
+          <Text style={styles.heroSubtitle}>닉네임과 선호 브랜드를 커뮤니티와 공유하세요.</Text>
+          <View style={styles.statRow}>
+            <StatPill label="선호 브랜드" value={preferredBrands.length} />
+            <StatPill label="가입 이메일" value={profile?.email ?? user.email ?? '-'} accent="muted" />
+            <StatPill label="가입일" value={joinedDate} accent="muted" />
+          </View>
+        </LinearGradient>
 
         {isLoadingProfile ? (
           <View style={styles.loader}>
             <ActivityIndicator color={colors.textPrimary} />
           </View>
         ) : (
-          <ScrollView contentContainerStyle={styles.form}>
-            <View style={styles.section}>
-              <Text style={styles.sectionLabel}>이메일</Text>
-              <Text style={styles.sectionValue}>{profile?.email ?? user.email ?? '-'}</Text>
-            </View>
-
+          <View style={styles.formCard}>
             <TextField label="닉네임" value={displayName} onChangeText={setDisplayName} />
 
             <View style={styles.section}>
@@ -140,44 +148,56 @@ const AccountScreen = () => {
               />
               <Button label="로그아웃" onPress={handleSignOut} variant="secondary" />
             </View>
-          </ScrollView>
+          </View>
         )}
-      </View>
+      </ScrollView>
     </Screen>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    paddingBottom: spacing(12),
     gap: spacing(6),
   },
-  header: {
-    gap: spacing(2),
+  hero: {
+    marginHorizontal: spacing(5),
+    marginTop: spacing(4),
+    borderRadius: radii.xl,
+    paddingHorizontal: spacing(5),
+    paddingVertical: spacing(5),
+    gap: spacing(3),
   },
-  title: {
+  heroTitle: {
     ...typography.heading1,
     fontSize: 28,
   },
-  subtitle: {
+  heroSubtitle: {
     ...typography.body,
+    color: colors.textSecondary,
+  },
+  statRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing(2),
   },
   loader: {
     paddingVertical: spacing(10),
     alignItems: 'center',
   },
-  form: {
+  formCard: {
+    marginHorizontal: spacing(5),
+    backgroundColor: colors.surfacePrimary,
+    borderRadius: radii.xl,
+    padding: spacing(5),
     gap: spacing(5),
-    paddingBottom: spacing(10),
+    ...shadows.card,
   },
   section: {
-    gap: spacing(1.5),
+    gap: spacing(2.5),
   },
   sectionLabel: {
     ...typography.label,
-  },
-  sectionValue: {
-    ...typography.body,
-    color: colors.textPrimary,
   },
   brandGrid: {
     flexDirection: 'row',
@@ -192,6 +212,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing(4),
+    paddingHorizontal: spacing(6),
   },
   emptyTitle: {
     ...typography.heading2,

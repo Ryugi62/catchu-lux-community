@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useMemo } from 'react';
 import {
   ActivityIndicator,
@@ -6,6 +7,7 @@ import {
   Image,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -14,6 +16,7 @@ import { BRANDS, CATEGORIES } from '../../constants/brands';
 import { useAuth } from '../../src/modules/auth';
 import { usePostsFeed } from '../../src/modules/posts';
 import { TagChip } from '../../src/components/ui/TagChip';
+import { StatPill } from '../../src/components/ui/StatPill';
 import { colors, radii, shadows, spacing, typography } from '../../src/theme';
 
 const FeedScreen = () => {
@@ -38,6 +41,10 @@ const FeedScreen = () => {
   const brandOptions = useMemo(() => BRANDS.slice().sort(), []);
   const profileInitial = (user?.displayName || user?.email || 'C').charAt(0).toUpperCase();
   const isRefreshing = isLoading && posts.length > 0;
+  const activeFiltersCount = useMemo(
+    () => [brandFilter, categoryFilter].filter(Boolean).length,
+    [brandFilter, categoryFilter]
+  );
 
   useEffect(() => {
     const previewUrls = posts
@@ -47,6 +54,87 @@ const FeedScreen = () => {
       Image.prefetch(url).catch(() => undefined);
     });
   }, [posts]);
+
+  const renderFilterSection = () => (
+    <View style={styles.filterBlock}>
+      <View style={styles.filterHeaderRow}>
+        <Text style={styles.filterTitle}>브랜드</Text>
+        {hasActiveFilter ? (
+          <Pressable onPress={clearFilters} style={styles.clearButton}>
+            <Text style={styles.clearText}>필터 초기화</Text>
+          </Pressable>
+        ) : null}
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chipRow}
+      >
+        {brandOptions.map((brand) => (
+          <TagChip
+            key={brand}
+            label={brand}
+            selected={brandFilter === brand}
+            onPress={() => setBrandFilter(brandFilter === brand ? null : brand)}
+          />
+        ))}
+      </ScrollView>
+
+      <Text style={styles.filterTitle}>카테고리</Text>
+      <View style={styles.chipWrap}>
+        {CATEGORIES.map((category) => (
+          <TagChip
+            key={category}
+            label={category}
+            selected={categoryFilter === category}
+            onPress={() => setCategoryFilter(categoryFilter === category ? null : category)}
+          />
+        ))}
+      </View>
+    </View>
+  );
+
+  const renderListHeader = () => (
+    <>
+      <LinearGradient
+        colors={['#f8efe4', '#fdf9f4']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.hero}
+      >
+        <View style={styles.headerTopRow}>
+          <View>
+            <Text style={styles.logo}>Catchu Luxury</Text>
+            <Text style={styles.subtitle}>프리미엄 인사이트 커뮤니티</Text>
+          </View>
+          <Pressable
+            onPress={() => router.push('/(app)/account')}
+            style={styles.profileButton}
+          >
+            <View style={styles.profileAvatar}>
+              <Text style={styles.profileInitial}>{profileInitial}</Text>
+            </View>
+            <Text style={styles.profileLabel}>{user?.displayName ?? '계정 설정'}</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.statsRow}>
+          <StatPill label="전체 게시글" value={posts.length} />
+          <StatPill
+            label="활성 필터"
+            value={activeFiltersCount}
+            accent={activeFiltersCount ? 'primary' : 'muted'}
+          />
+          <StatPill
+            label="오늘 본 게시글"
+            value={Math.min(posts.length, 12)}
+            accent="muted"
+          />
+        </View>
+      </LinearGradient>
+      {renderFilterSection()}
+    </>
+  );
 
   const renderFooter = () => {
     if (!posts.length) {
@@ -69,56 +157,14 @@ const FeedScreen = () => {
     return null;
   };
 
+  const renderEmpty = () => (
+    <View style={styles.emptyState}>
+      <Text style={styles.emptyStateText}>아직 게시글이 없어요. 첫 글을 작성해보세요!</Text>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.logo}>Catchu Luxury</Text>
-          <Text style={styles.subtitle}>프리미엄 아이템 인사이트 커뮤니티</Text>
-        </View>
-        <Pressable
-          onPress={() => router.push('/(app)/account')}
-          style={styles.profileButton}
-        >
-          <View style={styles.profileAvatar}>
-            <Text style={styles.profileInitial}>{profileInitial}</Text>
-          </View>
-          <Text style={styles.profileLabel}>{user?.displayName ?? '계정 설정'}</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.filterSection}>
-        <Text style={styles.sectionTitle}>브랜드</Text>
-        <View style={styles.chipWrap}>
-          {brandOptions.map((brand) => (
-            <TagChip
-              key={brand}
-              label={brand}
-              selected={brandFilter === brand}
-              onPress={() => setBrandFilter(brandFilter === brand ? null : brand)}
-            />
-          ))}
-        </View>
-        <Text style={styles.sectionTitle}>카테고리</Text>
-        <View style={styles.chipWrap}>
-          {CATEGORIES.map((category) => (
-            <TagChip
-              key={category}
-              label={category}
-              selected={categoryFilter === category}
-              onPress={() =>
-                setCategoryFilter(categoryFilter === category ? null : category)
-              }
-            />
-          ))}
-        </View>
-        {hasActiveFilter ? (
-          <Pressable onPress={clearFilters} style={styles.clearButton}>
-            <Text style={styles.clearText}>필터 초기화</Text>
-          </Pressable>
-        ) : null}
-      </View>
-
       {isLoading ? (
         <View style={styles.loader}>
           <ActivityIndicator size="large" color={colors.textPrimary} />
@@ -136,7 +182,10 @@ const FeedScreen = () => {
           refreshing={isRefreshing}
           onRefresh={refresh}
           onEndReached={loadMore}
-          onEndReachedThreshold={0.4}
+          onEndReachedThreshold={0.3}
+          ListHeaderComponent={renderListHeader}
+          ListFooterComponent={renderFooter}
+          ListEmptyComponent={renderEmpty}
           renderItem={({ item }) => (
             <Pressable
               onPress={() => router.push({ pathname: '/(app)/post/[id]', params: { id: item.id } })}
@@ -149,32 +198,28 @@ const FeedScreen = () => {
                   resizeMode="cover"
                 />
               ) : (
-                <View style={[styles.cardImage, styles.cardImageFallback]}> 
+                <View style={[styles.cardImage, styles.cardImageFallback]}>
                   <Text style={styles.cardImageFallbackText}>이미지 준비중</Text>
                 </View>
               )}
               <View style={styles.cardContent}>
                 <Text style={styles.cardBrand}>{item.brand}</Text>
                 <Text style={styles.cardTitle}>{item.title}</Text>
-                <Text style={styles.cardAuthor}>{item.authorName ?? '익명'}</Text>
-                <View style={styles.tagRow}>
-                  <Text style={styles.categoryTag}>{item.category}</Text>
+                <View style={styles.cardMetaRow}>
+                  <Text style={styles.cardAuthor}>{item.authorName ?? '익명'}</Text>
                   <Text style={styles.timestamp}>
                     {item.createdAt ? item.createdAt.toLocaleDateString('ko-KR') : '방금 전'}
                   </Text>
                 </View>
-                <Text numberOfLines={2} style={styles.cardExcerpt}>
+                <View style={styles.tagRow}>
+                  <Text style={styles.categoryTag}>{item.category}</Text>
+                </View>
+                <Text style={styles.cardExcerpt} numberOfLines={2}>
                   {item.content}
                 </Text>
               </View>
             </Pressable>
           )}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>아직 게시글이 없어요. 첫 글을 작성해보세요!</Text>
-            </View>
-          }
-          ListFooterComponent={renderFooter}
         />
       )}
 
@@ -193,20 +238,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.backgroundPrimary,
   },
-  header: {
+  hero: {
     paddingHorizontal: spacing(5),
-    paddingTop: spacing(3),
-    paddingBottom: spacing(2),
+    paddingTop: spacing(4),
+    paddingBottom: spacing(5),
+    gap: spacing(4),
+  },
+  headerTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   logo: {
     ...typography.heading1,
+    fontSize: 28,
   },
   subtitle: {
     ...typography.caption,
-    fontSize: 13,
+    fontSize: 14,
   },
   profileButton: {
     flexDirection: 'row',
@@ -229,24 +278,40 @@ const styles = StyleSheet.create({
     color: colors.accent,
     fontWeight: '600',
   },
-  filterSection: {
-    paddingHorizontal: spacing(5),
-    paddingVertical: spacing(3),
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.borderSubtle,
-    backgroundColor: colors.backgroundSecondary,
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     gap: spacing(3),
   },
-  sectionTitle: {
+  filterBlock: {
+    paddingHorizontal: spacing(5),
+    paddingVertical: spacing(4),
+    gap: spacing(3),
+    backgroundColor: colors.surfacePrimary,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.borderSubtle,
+  },
+  filterHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  filterTitle: {
     ...typography.label,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    gap: spacing(2),
+    paddingVertical: spacing(1),
   },
   chipWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: spacing(2),
   },
   clearButton: {
-    alignSelf: 'flex-end',
+    paddingHorizontal: spacing(2),
+    paddingVertical: spacing(1),
   },
   clearText: {
     color: colors.accent,
@@ -273,18 +338,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   listContent: {
-    padding: spacing(5),
     paddingBottom: spacing(30),
     gap: spacing(4),
-  },
-  listFooter: {
-    paddingVertical: spacing(4),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  footerText: {
-    ...typography.caption,
-    color: colors.textMuted,
+    backgroundColor: colors.backgroundPrimary,
   },
   card: {
     backgroundColor: colors.surfacePrimary,
@@ -293,6 +349,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderStrong,
     ...shadows.card,
+    marginHorizontal: spacing(5),
   },
   cardImage: {
     width: '100%',
@@ -309,7 +366,7 @@ const styles = StyleSheet.create({
   },
   cardContent: {
     padding: spacing(4),
-    gap: spacing(1.5),
+    gap: spacing(2),
   },
   cardBrand: {
     color: colors.accent,
@@ -319,14 +376,20 @@ const styles = StyleSheet.create({
   cardTitle: {
     ...typography.heading2,
   },
+  cardMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   cardAuthor: {
     ...typography.caption,
     fontSize: 13,
   },
   tagRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     alignItems: 'center',
+    gap: spacing(2),
   },
   categoryTag: {
     fontSize: 12,
@@ -342,6 +405,24 @@ const styles = StyleSheet.create({
   },
   cardExcerpt: {
     ...typography.body,
+  },
+  listFooter: {
+    paddingVertical: spacing(4),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  footerText: {
+    ...typography.caption,
+    color: colors.textMuted,
+  },
+  emptyState: {
+    alignItems: 'center',
+    padding: spacing(12),
+    gap: spacing(2),
+  },
+  emptyStateText: {
+    ...typography.body,
+    textAlign: 'center',
   },
   fab: {
     position: 'absolute',
@@ -360,15 +441,6 @@ const styles = StyleSheet.create({
     fontSize: 32,
     lineHeight: 34,
     fontWeight: '400',
-  },
-  emptyState: {
-    alignItems: 'center',
-    padding: spacing(12),
-    gap: spacing(2),
-  },
-  emptyStateText: {
-    ...typography.body,
-    textAlign: 'center',
   },
 });
 

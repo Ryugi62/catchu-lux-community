@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "expo": "~54.0.13",
+    "expo-linear-gradient": "~13.0.2",
     "expo-file-system": "~19.0.17",
     "expo-image-picker": "~17.0.8",
     "expo-router": "~6.0.12",

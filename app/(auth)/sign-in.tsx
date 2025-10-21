@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Link } from 'expo-router';
 import { Screen } from '../../src/components/ui/Screen';
 import { TextField } from '../../src/components/ui/TextField';
 import { Button } from '../../src/components/ui/Button';
 import { useAuth } from '../../src/modules/auth';
-import { colors, spacing, typography } from '../../src/theme';
+import { colors, radii, shadows, spacing, typography } from '../../src/theme';
 
 const SignInScreen = () => {
   const { signIn } = useAuth();
@@ -29,16 +30,21 @@ const SignInScreen = () => {
   };
 
   return (
-    <Screen>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Catchu Luxury</Text>
-          <Text style={styles.subtitle}>
-            명품 애호가들을 위한 커뮤니티에 오신 것을 환영합니다.
+    <Screen scrollable={false}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <LinearGradient
+          colors={['#f8efe4', '#fdf9f4']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.hero}
+        >
+          <Text style={styles.heroTitle}>Catchu Luxury</Text>
+          <Text style={styles.heroSubtitle}>
+            명품 인사이트를 한곳에서. 지금 로그인하고 최신 소식을 만나보세요.
           </Text>
-        </View>
+        </LinearGradient>
 
-        <View style={styles.form}>
+        <View style={styles.formCard}>
           <TextField
             label="이메일"
             autoCapitalize="none"
@@ -61,33 +67,45 @@ const SignInScreen = () => {
             회원가입
           </Link>
         </Text>
-      </View>
+      </ScrollView>
     </Screen>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    gap: spacing(8),
+    paddingBottom: spacing(10),
+    gap: spacing(6),
   },
-  header: {
+  hero: {
+    marginHorizontal: spacing(5),
+    marginTop: spacing(6),
+    paddingHorizontal: spacing(5),
+    paddingVertical: spacing(5),
+    borderRadius: radii.xl,
     gap: spacing(3),
   },
-  title: {
+  heroTitle: {
     ...typography.heading1,
-    fontSize: 28,
+    fontSize: 30,
   },
-  subtitle: {
+  heroSubtitle: {
     ...typography.body,
-    fontSize: 15,
+    color: colors.textSecondary,
   },
-  form: {
-    gap: spacing(5),
+  formCard: {
+    marginHorizontal: spacing(5),
+    backgroundColor: colors.surfacePrimary,
+    borderRadius: radii.xl,
+    padding: spacing(5),
+    gap: spacing(4),
+    ...shadows.card,
   },
   footer: {
     ...typography.body,
     color: colors.textPrimary,
     textAlign: 'center',
+    marginHorizontal: spacing(5),
   },
   link: {
     fontWeight: '700',
