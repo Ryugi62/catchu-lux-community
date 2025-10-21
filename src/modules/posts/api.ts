@@ -4,6 +4,7 @@ import {
   collection,
   doc,
   getDoc,
+  updateDoc,
   getDocs,
   limit,
   onSnapshot,
@@ -148,6 +149,23 @@ export const getPostById = async (postId: string): Promise<Post | null> => {
     return null;
   }
   return toPost(docSnap.data(), docSnap.id);
+};
+
+interface UpdatePostInput {
+  postId: string;
+  title?: string;
+  brand?: string;
+  category?: string;
+  tags?: string[];
+  content?: string;
+  imageUrls?: string[];
+}
+
+export const updatePost = async ({ postId, ...updates }: UpdatePostInput) => {
+  const docRef = doc(firestore, POSTS_COLLECTION, postId);
+  await updateDoc(docRef, {
+    ...updates,
+  });
 };
 
 interface FetchPostsPageParams {

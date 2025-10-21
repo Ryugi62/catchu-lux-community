@@ -5,6 +5,8 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  updateDoc,
+  doc,
   type DocumentData,
 } from 'firebase/firestore';
 import { firestore } from '../../lib/firebase';
@@ -38,6 +40,18 @@ export const createComment = async ({ postId, content, toneTag, authorId, author
     authorName,
     createdAt: serverTimestamp(),
   });
+};
+
+interface UpdateCommentInput {
+  postId: string;
+  commentId: string;
+  content?: string;
+  toneTag?: string;
+}
+
+export const updateComment = async ({ postId, commentId, ...updates }: UpdateCommentInput) => {
+  const commentRef = doc(firestore, `posts/${postId}/${COMMENTS_COLLECTION}/${commentId}`);
+  await updateDoc(commentRef, updates);
 };
 
 interface ListenToCommentsOptions {
